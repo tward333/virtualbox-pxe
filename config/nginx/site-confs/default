@@ -1,0 +1,128 @@
+upstream ubuntu {
+  server us.archive.ubuntu.com;
+  server archive.ubuntu.com backup;
+}
+upstream ubuntuports {
+  server ports.ubuntu.com;
+}
+upstream centos {
+server mirrors.maine.edu;
+server mirrors.mit.edu backup;
+}
+upstream elrepo {
+#server elrepo.org;
+server dfw.mirror.rackspace.com;
+}
+
+proxy_cache_path /var/repo_mirror
+        levels=1:2
+        keys_zone=repository_cache:50m
+        inactive=14y
+	use_temp_path=off;
+#        max_size=100g;
+
+
+server {
+	listen 80;
+	location / {
+		root /assets;
+		autoindex on;
+	}
+
+
+  location /ubuntu {
+    root /var/repo_mirror/index_data;
+		autoindex on;
+    try_files $uri @ubuntu;
+  }
+
+  location @ubuntu {
+    proxy_pass http://ubuntu;
+    proxy_buffering on;
+    proxy_set_header Host us.archive.ubuntu.com;
+    proxy_cache_valid 200 10d;
+    proxy_cache repository_cache;
+        proxy_ignore_headers Expires;
+        proxy_ignore_headers X-Accel-Expires;
+        proxy_ignore_headers Cache-Control;
+        proxy_ignore_headers Set-Cookie;
+
+        proxy_hide_header Expires;
+        proxy_hide_header X-Accel-Expires;
+        proxy_hide_header Cache-Control;
+        proxy_hide_header Pragma;
+    proxy_cache_use_stale error timeout invalid_header updating;
+    proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+  }
+  location /ubuntu-ports {
+    root /var/repo_mirror/index_data;
+		autoindex on;
+    try_files $uri @ubuntuports;
+  }
+
+  location @ubuntuports {
+    proxy_pass http://ubuntuports;
+    proxy_buffering on;
+    proxy_set_header Host ports.ubuntu.com;
+    proxy_cache_valid 200 10d;
+    proxy_cache repository_cache;
+        proxy_ignore_headers Expires;
+        proxy_ignore_headers X-Accel-Expires;
+        proxy_ignore_headers Cache-Control;
+        proxy_ignore_headers Set-Cookie;
+
+        proxy_hide_header Expires;
+        proxy_hide_header X-Accel-Expires;
+        proxy_hide_header Cache-Control;
+        proxy_hide_header Pragma;
+    proxy_cache_use_stale error timeout invalid_header updating;
+    proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+  }
+  location /centos {
+    root /var/repo_mirror/index_data;
+		autoindex on;
+    try_files $uri @centos;
+  }
+
+  location @centos {
+    proxy_pass http://centos;
+    proxy_buffering on;
+    #proxy_set_header Host us.archive.centos.com;
+    proxy_cache_valid 200 10d;
+    proxy_cache repository_cache;
+        proxy_ignore_headers Expires;
+        proxy_ignore_headers X-Accel-Expires;
+        proxy_ignore_headers Cache-Control;
+        proxy_ignore_headers Set-Cookie;
+
+        proxy_hide_header Expires;
+        proxy_hide_header X-Accel-Expires;
+        proxy_hide_header Cache-Control;
+        proxy_hide_header Pragma;
+    proxy_cache_use_stale error timeout invalid_header updating;
+    proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+  }
+  location /elrepo {
+    root /var/repo_mirror/index_data;
+		autoindex on;
+    try_files $uri @elrepo;
+  }
+  location @elrepo {
+    proxy_pass http://elrepo;
+    proxy_buffering on;
+    proxy_cache_valid 200 10d;
+    proxy_cache repository_cache;
+        proxy_ignore_headers Expires;
+        proxy_ignore_headers X-Accel-Expires;
+        proxy_ignore_headers Cache-Control;
+        proxy_ignore_headers Set-Cookie;
+
+        proxy_hide_header Expires;
+        proxy_hide_header X-Accel-Expires;
+        proxy_hide_header Cache-Control;
+        proxy_hide_header Pragma;
+    proxy_cache_use_stale error timeout invalid_header updating;
+    proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+  }
+}
+

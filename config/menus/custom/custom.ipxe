@@ -1,0 +1,30 @@
+#!ipxe
+###
+### {{ site_name }} custom menu example
+###
+
+:custom
+clear custom_choice
+menu tward test bullshit
+item --gap This is the first sub menu
+item ubuntu18 ${space} ubuntu-bionic-18
+#item option_two ${space} Loading an ISO
+choose custom_choice || goto custom_exit
+echo ${cls}
+goto ${custom_choice}
+goto custom_exit
+
+:ubuntu18
+kernel http://192.168.56.20:8080/ubuntu-bionic-18/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+initrd http://192.168.56.20:8080/ubuntu-bionic-18/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+imgargs linux ks=http://192.168.56.20:8080/kickstart/payload.txt  netcfg/choose_interface=08:00:27:1B:CC:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal 
+boot || goto custom_exit
+
+#:option_two
+#kernel {{ memdisk_location }} raw iso
+#initrd http://path.to/iso
+#boot || goto custom_exit
+
+
+:custom_exit
+exit

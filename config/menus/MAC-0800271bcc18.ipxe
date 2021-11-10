@@ -1,0 +1,15 @@
+#!ipxe
+#initrd http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+#kernel http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+#imgargs linux initrd=initrd.gz  auto=true priority=critical preseed/url=http://192.168.56.20/kickstart/ubuntu/virtualbox-preseed-bios.txt  netcfg/choose_interface=08:00:27:1b:cc:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal GRUB_DISABLE_OS_PROBER=true 
+#boot
+#initrd http://192.168.56.20:8080/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/initrd.gz
+#kernel http://192.168.56.20:8080/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/ubuntu-installer/amd64/linux
+#imgargs linux initrd=initrd.gz ip=dhcp autoinstall ds=nocloud-net;s=http://192.168.56.20:8080/kickstart/ubuntu/20.04-yaml/virtualbox-efi.yaml
+
+initrd http://192.168.56.20:8080/kickstart/ubuntu/20.04-yaml/pxeisoboot/initrd
+kernel http://192.168.56.20:8080/kickstart/ubuntu/20.04-yaml/pxeisoboot/vmlinuz
+imgargs vmlinuz initrd=initrd root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url=http://192.168.56.20:8080/kickstart/ubuntu/20.04-yaml/pxeisoboot/ubuntu-20.04.2-live-server-amd64.iso autoinstall ds=nocloud-net;s=http://192.168.56.20:8080/kickstart/ubuntu/20.04-yaml/
+#imgargs vmlinuz initrd=initrd root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url=http://192.168.56.20:8080/kickstart/ubuntu/20.04-yaml/pxeisoboot/ubuntu-20.04.2-live-server-amd64.iso autoinstall
+sleep 5
+boot

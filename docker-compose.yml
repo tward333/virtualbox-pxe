@@ -1,0 +1,37 @@
+---
+version: "2.1"
+services:
+  pxe-tftp:
+    image: ghcr.io/linuxserver/netbootxyz
+    container_name: pxe-tftp
+    environment:
+      - PUID=1001
+      - PGID=1001
+      - MENU_VERSION=1.9.9 
+      - PORT_RANGE=30000:30010 
+      - SUBFOLDER=/ 
+    volumes:
+      - ./config:/config
+      - ./assets:/assets 
+      - ./repomirror:/var/repo_mirror 
+    ports:
+      - 192.168.56.20:3000:3000
+      - 192.168.56.20:69:69/udp
+      - 192.168.56.20:8080:80 
+      - 192.168.56.20:80:80 
+    restart: always
+  dhcp:
+    network_mode: host
+    image:  joebiellik/dhcpd
+    container_name: pxe-dhcp
+    volumes:
+      - ./dhcpd.conf:/etc/dhcp/dhcpd.conf
+    restart: always
+  rsyslog:
+    network_mode: host
+    image:  instantlinux/rsyslogd
+    container_name: rsyslog
+    restart: always
+    volumes:
+    - ./rsyslog/etc-rsyslog.d:/etc/rsyslog.d:ro
+    - ./rsyslog/logs:/var/log

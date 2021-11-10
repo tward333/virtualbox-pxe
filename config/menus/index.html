@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>netboot.xyz BootLoaders - Powered by netboot.xyz</title>
+  </head>
+  <style>
+    table, th, td {
+    padding: 5px;
+    border: 1px solid black; 
+    }
+  </style>
+  <body>
+  <div style="font-family: monospace, fixed; font-weight: bold;">
+  <span style="">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;_&#160;&#160;&#160;_&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;_&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</span><br />
+  <span style="">&#160;_&#160;__&#160;&#160;&#160;___|&#160;|_|&#160;|__&#160;&#160;&#160;___&#160;&#160;&#160;___&#160;|&#160;|_&#160;&#160;__&#160;&#160;___&#160;&#160;&#160;_&#160;____</span><br />
+  <span style="">|&#160;&#39;_&#160;\&#160;/&#160;_&#160;\&#160;__|&#160;&#39;_&#160;\&#160;/&#160;_&#160;\&#160;/&#160;_&#160;\|&#160;__|&#160;\&#160;\/&#160;/&#160;|&#160;|&#160;|_&#160;&#160;/</span><br />
+  <span style="">|&#160;|&#160;|&#160;|&#160;&#160;__/&#160;|_|&#160;|_)&#160;|&#160;(_)&#160;|&#160;(_)&#160;|&#160;|_&#160;_&#160;&gt;&#160;&#160;&lt;|&#160;|_|&#160;|/&#160;/&#160;</span><br />
+  <span style="">|_|&#160;|_|\___|\__|_.__/&#160;\___/&#160;\___/&#160;\__(_)_/\_\\__,&#160;/___|</span><br />
+  <span style="">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;|___/&#160;&#160;&#160;&#160;&#160;</span><br />
+  <p>
+  Version: 1.9.9<br>
+  Powered by <a href=https://netboot.xyz>netboot.xyz</a>
+  </p>
+  <p>Legacy (PCBIOS) iPXE Bootloaders</p>
+  <table style="width:100%">
+    <!-- table header -->
+    <tr>
+       <th> Type </th>
+       <th> Bootloader </th>
+       <th> Description </th>
+    </tr>
+    <!-- table rows -->
+            <tr>
+       <td> ISO </td>
+       <td> <a href="ipxe/netboot.xyz.iso">netboot.xyz.iso</a> </td>
+       <td> Used for CD/DVD, Virtual CDs, DRAC/iLO, VMware, Virtual Box </td>
+    </tr>
+        <tr>
+       <td> USB </td>
+       <td> <a href="ipxe/netboot.xyz.usb">netboot.xyz.usb</a> </td>
+       <td> Used for creation of USB Keys </td>
+    </tr>
+        <tr>
+       <td> Kernel </td>
+       <td> <a href="ipxe/netboot.xyz.lkrn">netboot.xyz.lkrn</a> </td>
+       <td> Used for booting from GRUB/EXTLINUX </td>
+    </tr>
+        <tr>
+       <td> Floppy </td>
+       <td> <a href="ipxe/netboot.xyz.dsk">netboot.xyz.dsk</a> </td>
+       <td> Virtual floppy disk for DRAC/iLO, VMware, Virtual Box, etc </td>
+    </tr>
+        <tr>
+       <td> DHCP </td>
+       <td> <a href="ipxe/netboot.xyz.kpxe">netboot.xyz.kpxe</a> </td>
+       <td> DHCP boot image file, uses built-in iPXE NIC drivers </td>
+    </tr>
+        <tr>
+       <td> DHCP-undionly </td>
+       <td> <a href="ipxe/netboot.xyz-undionly.kpxe">netboot.xyz-undionly.kpxe</a> </td>
+       <td> DHCP boot image file, use if you have NIC issues </td>
+    </tr>
+          </table>
+
+  <p>UEFI iPXE Bootloaders</p>
+
+  <table style="width:100%">
+    <!-- table header -->
+    <tr>
+       <th> Type </th>
+       <th> Bootloader </th>
+       <th> Description </th>
+    </tr>
+    <!-- table rows -->
+            <tr>
+       <td> ISO </td>
+       <td> <a href="ipxe/netboot.xyz-efi.iso">netboot.xyz-efi.iso</a> </td>
+       <td> EFI BIOS, works in Virtual Box EFI mode </td>
+    </tr>
+        <tr>
+       <td> USB </td>
+       <td> <a href="ipxe/netboot.xyz-efi.usb">netboot.xyz-efi.usb</a> </td>
+       <td> Used for booting from GRUB/EXTLINUX </td>
+    </tr>
+        <tr>
+       <td> DHCP </td>
+       <td> <a href="ipxe/netboot.xyz.efi">netboot.xyz.efi</a> </td>
+       <td> DHCP EFI boot image file, uses built-in iPXE NIC drivers </td>
+    </tr>
+        <tr>
+       <td> DHCP-snp </td>
+       <td> <a href="ipxe/netboot.xyz-snp.efi">netboot.xyz-snp.efi</a> </td>
+       <td> EFI w/ Simple Network Protocol, attempts to boot all net devices </td>
+    </tr>
+        <tr>
+       <td> DHCP-snponly </td>
+       <td> <a href="ipxe/netboot.xyz-snponly.efi">netboot.xyz-snponly.efi</a> </td>
+       <td> EFI w/ Simple Network Protocol, only boots from device chained from </td>
+    </tr>
+          </table>
+  </div>
+  </body>
+</html>

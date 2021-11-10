@@ -1,0 +1,167 @@
+#!ipxe
+
+:start
+chain --autofree boot.cfg ||
+ntp 0.pool.ntp.org ||
+iseq ${cls} serial && goto ignore_cls ||
+set cls:hex 1b:5b:4a  # ANSI clear screen sequence - "^[[J"
+set cls ${cls:string}
+:ignore_cls
+
+
+isset ${arch} && goto skip_arch_detect ||
+cpuid --ext 29 && set arch x86_64 || set arch i386
+iseq ${buildarch} arm64 && set arch arm64 ||
+:skip_arch_detect
+isset ${menu} && goto ${menu} ||
+
+isset ${ip} || dhcp || echo DHCP failed
+
+
+:main_menu
+clear menu
+set space:hex 20:20
+set space ${space:string}
+iseq ${arch} x86_64 && set arch_a amd64 || set arch_a ${arch}
+menu ${site_name}
+item --gap Default:
+#item centos8 ${space} centos8
+item efiubuntu18ksps ${space} EFIubuntu-bionic-18-preseed-kickstart-combo
+item eficentos7 ${space} EFIcentos7-kickstart
+item centos7 ${space} centos7-kickstart
+item ubuntu18ksps ${space} ubuntu-bionic-18-preseed-kickstart-combo
+item ubuntu18ks ${space} ubuntu-bionic-18-kickstart
+item ubuntu18manual ${space} ubuntu-manual
+item ubuntu18ps ${space} ubuntu-bionic-18-preseed
+item sysrec ${space} sysrec
+item --gap EFI:
+item eficentos7 ${space} EFIcentos7-kickstart
+item efisysrec ${space} sysrec
+item centos8 ${space} centos8
+item --gap special:
+item sysrec-edit ${space} sysrec (cow_label=backstore)
+#item custom-user  ${space} custom
+item local ${space} Boot from local hdd
+#isset ${menu} && set timeout 0 || set timeout 5000
+isset ${menu} && set timeout 0 || set timeout 0
+choose --timeout ${timeout} --default ${menu} menu || goto ubuntu18ksps
+echo ${cls}
+goto ${menu} ||
+iseq ${sigs_enabled} true && goto verify_sigs || goto change_menu
+
+:verify_sigs
+imgverify ${menu}.ipxe ${sigs}${menu}.ipxe.sig || goto error
+goto change_menu
+
+:change_menu
+chain ${menu}.ipxe || goto error
+goto main_menu
+
+:error
+echo Error occured, press any key to return to menu ...
+prompt
+goto main_menu
+
+:local
+echo Booting from local disks ...
+exit 0
+
+
+
+:centos7
+initrd http://192.168.56.20:8080/centos/7/os/x86_64/images/pxeboot/initrd.img
+kernel http://192.168.56.20:8080/centos/7/os/x86_64/images/pxeboot/vmlinuz
+imgargs vmlinuz ks=http://192.168.56.20:8080/kickstart/centos/kickstart.txt ksdevice=08:00:27:1B:CC:18 sshd syslog=192.168.56.20:514 gpt initrd=initrd.img inst.repo=http://192.168.56.20:8080/centos/7/os/x86_64
+boot
+
+:eficentos7
+initrd http://192.168.56.20:8080/centos/7/os/x86_64/images/pxeboot/initrd.img
+kernel http://192.168.56.20:8080/centos/7/os/x86_64/images/pxeboot/vmlinuz
+#imgargs vmlinuz ks=http://192.168.56.20:8080/kickstart/centos/kickstart-efi.txt ksdevice=08:00:27:1B:CC:19 sshd syslog=192.168.56.20:514 gpt initrd=initrd.img inst.repo=http://192.168.56.20:8080/centos/7/os/x86_64
+imgargs vmlinuz ks=http://192.168.56.20:8080/kickstart/centos/kickstart-efi.txt ksdevice=08:00:27:1B:CC:19 sshd syslog=192.168.56.20:514 gpt initrd=initrd.img 
+echo "sleeping 5"
+sleep 5
+echo "boot"
+boot
+
+:ubuntu18ks
+kernel http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+initrd http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+imgargs linux ks=http://192.168.56.20:8080/kickstart/kickstart.txt  netcfg/choose_interface=08:00:27:1B:CC:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal 
+boot
+
+:ubuntu18ps
+kernel http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+initrd http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+imgargs linux priority=critical interface=auto netcfg/dhcp_timeout=120 console-setup/layoutcode=us  preseed/url=http://192.168.56.20/kickstart/preseed.cfg  netcfg/choose_interface=08:00:27:1B:CC:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal 
+boot
+
+:ubuntu18ksps
+kernel http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+initrd http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+imgargs linux ks=http://192.168.56.20:8080/kickstart/kickstart.txt preseed/url=http://192.168.56.20/kickstart/edcim.txt  netcfg/choose_interface=08:00:27:1B:CC:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal 
+boot
+
+:ubuntu18manual
+kernel http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+initrd http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+imgargs linux netcfg/choose_interface=08:00:27:1B:CC:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal 
+boot
+
+:efiubuntu18ksps
+initrd http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+kernel http://192.168.56.20:8080/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+imgargs linux initrd=initrd.gz  ks=http://192.168.56.20:8080/kickstart/kickstart.txt preseed/url=http://192.168.56.20/kickstart/edcim.txt  netcfg/choose_interface=08:00:27:1B:CC:18 netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal 
+boot
+
+:sysrec
+kernel http://192.168.56.20:8080/nfs/sysrcd803_mojo/sysresccd/boot/x86_64/vmlinuz 
+initrd http://192.168.56.20:8080/nfs/sysrcd803_mojo/sysresccd/boot/x86_64/sysresccd.img
+imgargs vmlinuz  ip=dhcp nofirewall rootpass=dicks archisobasedir=sysresccd archiso_http_srv=http://192.168.56.20:8080/nfs/sysrcd803_mojo/ setkmap=us autoruns=no ar_nowait ar_nodel
+boot
+
+
+:efisysrec
+initrd http://192.168.56.20:8080/nfs/sysrcd803_mojo/sysresccd/boot/x86_64/sysresccd.img
+kernel http://192.168.56.20:8080/nfs/sysrcd803_mojo/sysresccd/boot/x86_64/vmlinuz 
+imgargs vmlinuz initrd=sysresccd.img ip=dhcp nofirewall rootpass=dicks archisobasedir=sysresccd archiso_http_srv=http://192.168.56.20:8080/nfs/sysrcd803_mojo/ setkmap=us autoruns=no ar_nowait ar_nodel
+imgstat
+echo Sleeping...
+sleep 5
+echo Boot
+boot 
+
+:sysrec-edit
+initrd http://192.168.56.20:8080/nfs/sysrcd803_mojo/sysresccd/boot/x86_64/sysresccd.img
+kernel http://192.168.56.20:8080/nfs/sysrcd803_mojo/sysresccd/boot/x86_64/vmlinuz 
+imgargs vmlinuz initrd=sysresccd.img ip=dhcp nofirewall rootpass=dicks archisobasedir=sysresccd archiso_http_srv=http://192.168.56.20:8080/nfs/sysrcd803_mojo/ setkmap=us autoruns=no ar_nowait ar_nodel cow_label=backstore cow_directory=mojo
+imgstat
+echo Sleeping 5
+sleep 5
+boot 
+
+
+#:centos-install-7
+#echo Starting CentOS 7 ${archl} installer
+#set base-url ${boot-url}/unattended/centos
+#kernel ${base-url}/centos7_${archl}.kernel initrd=centos7_${archl}.initrd inst.repo=http://${128.1:string}/centos/7/os/x86_64
+#initrd ${base-url}/centos7_${archl}.initrd
+#initrd ${base-url}/centos7_${archl}.squash
+#boot || goto failed
+#goto start 
+
+:centos8
+echo init
+#initrd http://192.168.56.20:8080/centos/8/BaseOS/x86_64/os/images/pxeboot/initrd.img
+#kernel http://192.168.56.20:8080/centos/8/BaseOS/x86_64/os/images/pxeboot/vmlinuz
+initrd http://192.168.56.20/centos/8/BaseOS/x86_64/kickstart/images/pxeboot/initrd.img
+kernel http://192.168.56.20/centos/8/BaseOS/x86_64/kickstart/images/pxeboot/vmlinuz
+#imgargs vmlinuz ksdevice=08:00:27:1B:CC:18 sshd syslog=192.168.56.20:514 gpt initrd=initrd.img inst.repo=http://192.168.56.20:8080/centos/8/BaseOS/x86_64/
+imgargs vmlinuz ksdevice=08:00:27:1B:CC:18 sshd syslog=192.168.56.20:514 gpt initrd=initrd.img 
+imgstat
+echo sleep
+sleep 5
+echo boot
+boot
+
+

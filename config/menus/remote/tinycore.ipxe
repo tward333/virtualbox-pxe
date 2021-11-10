@@ -1,0 +1,23 @@
+#!ipxe
+
+# Tiny Core Linux
+# http://tinycorelinux.net/downloads.html
+
+set tinycore_mirror http://tinycorelinux.net
+
+:tinycore_menu
+set dir 10.x/x86/release
+menu Tiny Core Linux 10.x
+item Core ${space} ${os} Core [ISO]
+item TinyCore ${space} ${os} TinyCore [ISO]
+choose version || goto tinycore_exit
+
+echo ${cls}
+
+kernel ${memdisk} iso raw ${params}
+initrd ${tinycore_mirror}/${dir}/${version}-current.iso
+boot
+
+:tinycore_exit
+clear menu
+exit 0
