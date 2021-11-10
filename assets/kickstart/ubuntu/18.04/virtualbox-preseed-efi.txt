@@ -1,0 +1,161 @@
+#!preseed
+
+###vars
+#edcim 192.168.56.20:8080
+#url /ubuntu/
+#macaddr 08:00:27:1b:cc:19
+#ip 192.168.56.19
+#netmask 255.255.255.0
+#gateway 192.168.56.1
+#hostname pxetest-efi.home.local
+####
+
+
+##wtf ubuntu
+d-i preseed/locale string en_US
+d-i debian-installer/locale string en_US
+#d-i kbd-chooser/method select Select from full keyboard list
+d-i console-keymaps-acorn/keymap select us
+d-i console-keymaps-amiga/keymap select us
+d-i console-keymaps-at/keymap select us
+d-i console-keymaps-atari/keymap select us
+d-i console-keymaps-dec/keymap select us
+d-i console-keymaps-mac/keymap select us
+d-i console-keymaps-sun/keymap select us
+d-i console-keymaps-usb/keymap select us
+d-i console-setup/layoutcode string us
+d-i console-setup/ask_detect boolean false
+#d-i keyboard-configuration/layoutcode=us
+#d-i console-setup/layoutcode=us
+
+#d-i pkgsel/install-language-support boolean false
+##
+
+##Start General setup stuff
+d-i time/zone string  America/New_York
+d-i clock-setup/utc boolean false
+d-i prebaseconfig/reboot_in_progress note
+d-i finish-install/reboot_in_progress note
+d-i mirror/country string manual
+
+d-i mirror/protocol select http
+d-i mirror/http/hostname string 192.168.56.20:8080
+d-i mirror/http/directory string /ubuntu/
+##End General
+
+
+##start server specific stuff
+d-i passwd/root-login boolean true
+d-i passwd/root-password-crypted password $1$2AgxYDj0$MGHRhHnp5wfDruRp6mgQ6. 
+d-i passwd/make-user boolean false
+d-i user-setup/allow-password-weak boolean true
+
+d-i netcfg/disable_autoconfig boolean true
+d-i netcfg/use_autoconfig boolean false
+
+
+d-i netcfg/disable_dhcp boolean true
+d-i netcfg/dhcp_options select Configure network manually
+d-i netcfg/get_ipaddress string 192.168.56.19
+d-i netcfg/get_netmask string 255.255.255.0
+d-i netcfg/get_gateway string 192.168.56.1
+d-i netcfg/get_nameservers string 8.8.8.8,1.1.1.1
+d-i netcfg/get_hostname string pxetest-efi.home.local
+d-i netcfg/confirm_static boolean true
+
+
+d-i pkgsel/install-pattern string (~n^openssh-server$|~n^wget$|~n^curl$|~n^vim$|~n^ifenslave$|~n^ifupdown$)
+#d-i tasksel tasksel/first multiselect
+d-i pkgsel/include string openssh-server wget curl vim ifenslave ifupdown
+d-i debconf/priority select critical
+##end server specific stuff
+
+
+#strictly enforce GPT
+d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt
+
+#other disk related enforcements
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman/confirm_write_new_label boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman/choose_partition select finish
+d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i mdadm/boot_degraded boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman/confirm boolean true
+
+
+##disk nuking
+#d-i partman/early_command \
+#     string /bin/dd if=/dev/zero of=/dev/ bs=512 count=1
+#d-i preseed/early_command string \
+#echo "pass 1" ; /sbin/mdadm -Esv ; /sbin/mdadm  --stop /dev/md* ; /bin/dd if=/dev/zero of=/dev/nvme0n1 bs=512 count=1000 ; /bin/dd if=/dev/zero of=/dev/nvme1n1 bs=512 count=1000 ; echo "pass 2"; /sbin/mdadm -Esv ; /sbin/mdadm  --stop /dev/md*
+
+
+### disk layout start
+d-i partman-auto/method string raid
+d-i partman-auto/disk string /dev/sda /dev/sdb
+
+d-i partman-auto/expert_recipe string \
+    myraid :: \
+                200 200 200 fat32                 \
+			$primary{ }  $bootable{ } \
+			method{ efi }             \
+		        format{ }                 \
+                .                                 \
+		8192 100 8192 raid                \
+			$primary{ }               \
+			method{ raid }            \
+		.                                 \
+		8192 100 9999999999 raid          \
+			$primary{ }               \
+			method{ raid }            \
+		.
+
+
+d-i partman-auto-raid/recipe string  \
+  1 2 0 swap -  /dev/sda2#/dev/sdb2 . \
+  1 2 0 ext4 / /dev/sda3#/dev/sdb3 .
+
+
+d-i grub-installer/bootdev string (hd0)
+### disk layout end
+
+#post-install stuff, no easy way to separate or comment :( 
+
+d-i preseed/late_command string \
+in-target sed -i 's/quiet splash//g' /etc/default/grub ;\
+in-target update-grub ;\
+in-target touch /root/success.txt ;\
+in-target /usr/bin/perl -pi -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/s' /etc/ssh/sshd_config ;\
+in-target wget -O /root/redoefi.sh 192.168.56.20:8080/kickstart/ubuntu/efi-sda.sh ;\
+in-target /bin/bash /root/redoefi.sh ;\
+in-target /bin/rm -f /etc/netplan/01-netcfg.yaml ;\
+in-target /bin/sh -c "/bin/echo 'network:' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '  version: 2' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '  renderer: networkd' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '  ethernets:' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '   id0:' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '      match:' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '        macaddress: 08:00:27:1b:cc:19' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '      addresses: [192.168.56.19/24]' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '      gateway4: 192.168.56.1' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '      nameservers:' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo '        addresses: [8.8.8.8,1.1.1.1]' >> /etc/netplan/01-netcfg.yaml" ;\
+in-target /bin/sh -c "/bin/echo 'pxetest-efi.home.local' > /etc/hostname" ;\
+in-target /bin/mkdir /root/.ssh ;\
+in-target /bin/sh -c "/bin/echo 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAxAMtdEe7E0WbOpbX14hRUALdfBEUA/mQLqqIak+mcOxDQKZ40sAGGuCZLJRw+V5Q8ItFktZHBh7onTm8GvpmpAfTKlr0IdNsrdRGGKRICpNkIgwiJnA22OwSr+jES2cCTgwbw/xazq+hm+gUuRWYVQb3nF9ELK8xJr2s2zmjoeb8OsFtlJTcUapxIcUTzPI5XgqUyLDcJ9X27gp8SFRA40pKirzlCBLUHKdBrBCls2GiuzIragwgJYoMQw+rwnpPjBcdtWxLT/x0OPiVEG3KDqvR9REvoC4lou30Dp7NeawE/QM7srDuKRRO3B4EBoHqPQMI7bNkrkJgKbSuMiwUuw== thomas@mojohost.com' >> /root/.ssh/authorized_keys" ;\
+in-target /bin/sh -c "/bin/echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCy2A+SR5zGT7zjw/8H22YGUJM5b3tbanrKkp3hdGlco2og42SOuvP4Qqg0tAxaGJt2CrGmmGfvIWXt7y23cxlnn08rgx0HSzAF944NX+BABbZWIVd5qEk5M3ioSyts7k0t6JybukyH7kBcCL8Q5h+QWbl/0dUXMyKbmS/iE5+k1rRYXdPlS0eyIeHs4GMFw7FWTpzjUCYGgHrH/cJVVQLCotQOjvIMm2RO8JoxOpvbY0sqz0bB6w8wpSfpfkSJFqnvXIge52vrzpLWdq88t5iuQyxBbZiXbTnUyhBzB7hqisXR7tt5GOcLc/np1ilhsnfgvxLKk/VDILWzLlPf+FY1 root@edcim' >> /root/.ssh/authorized_keys" ;\
+in-target /bin/sh -c "/bin/echo 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAn1OQ7x5nTHGyw3ke4tmNWhpLV1RaW/y4l5rl0CI4u0E0byUpetQGPgY4mfNv7+rmKQwc335e5CEgaRino9EQSegIJpu7UxEH6bwNDZYn6HunChG4Os0tB0vuxV6kFh5D6asbbxOEaMClv8etR5ALDvK+S98NDrn906gVT0KMvZO09Kfl6vwsutuXkbQTXS3lpbKwa5bVGkLujqgvZ061hPit276gbYhX4xNGt2UjM0hZpeg04mMpdzm0e/ba/16ZAqe4vqiXgiHZVp3OFsCafbo+Lb2dw4RrzriWr4ckH8ki96Pa00DzdwYWEm5nYww7PBMKbqKRbfxngV4GnvBS9w== root@vm248.mojohost.com' >> /root/.ssh/authorized_keys" ;\
+in-target /bin/sh -c "/bin/echo 'DNS=8.8.8.8' >> /etc/systemd/resolved.conf" ;\
+in-target /bin/sh -c "/bin/echo 'DNS=1.1.1.1' >> /etc/systemd/resolved.conf" ;\
+in-target /bin/sed -i -e's#http://192.168.56.20:8080/ubuntu/#http://us.archive.ubuntu.com/ubuntu/#' /etc/apt/sources.list ;\
+in-target /usr/bin/curl -O "http://192.168.56.20:8080/os/kickstart/complete?mac=08:00:27:1b:cc:19"
+

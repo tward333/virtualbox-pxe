@@ -1,0 +1,82 @@
+#cloud-config
+autoinstall:
+  apt:
+    geoip: false
+    preserve_sources_list: false
+    primary:
+    - arches: [amd64]
+      uri: http://185.94.239.204:8080/os/downloader/59/0c:c4:7a:53:56:ea/
+  user-data:
+    disable_root: false
+  identity: {hostname: jf27-r03-3, password: $6$ty2Pis1UxTL/iscq$.rVNIf36E37Zy9ZY.2nLZFybp1eBC2oJyv6z6bRpBnsRAV82nLw3YZk5ctxYUT5Sza1JfdzvzvbhL3Avp2eJs0,
+    username: root}
+  keyboard: {layout: us, toggle: null, variant: ''}
+  locale: en_US
+  network:
+    ethernets:
+      id0:
+        match:
+          macaddress: 0c:c4:7a:53:56:ea
+        addresses: [192.168.96.91/24]
+        gateway4: 192.168.96.1
+        nameservers:
+          addresses: [192.168.96.1]
+          search: []
+      id1:
+        match:
+          macaddress: 0c:c4:7a:53:56:eb
+        link-local: [ ipv4 ]
+    version: 2
+  ssh:
+    allow-pw: true
+    authorized-keys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCewY5bNAhiXqdphDAVZ1reiF08WgNuFzLz2TgDdfiWzLc3i/EVdg/Ic6qGq5vlMQ3MKAVYJmBIwLxY0aM7Pxq4pjr/SSApbP1HnJNtzUmVN7DSi4yK53gZ72yf5j3nuWzE/jWjlR6CWTwovi6GF9iANzx6KUXpRPUjhuiScN8agJpkqrA1NRb0DZFzEeoQjGkSEUONE9KBD0QWNGG04u8IJEkLQnPwGWIFYdwwlR7vsQ/L6MiD07bff1FJzycDyLx05hc3sWqHv3zgty5zLhVbcQRpE6hFkD4k7g6gglK0T99Lf99dg01y02ETyYANMLZw02cGcg9Mr0n5HtkT73S9ZB4yrrUkhOtIQxjKFu8G5v781Qu85tVdn5mv1+MJQGTXptA7JF+ASrh6aZafuw+XdiHmafaXB2dWwDFdLBigEIUNJwzCJVPa/c8RL0jGExONtoAh/tq5aQ3cJB3gQd1aOk8QhYWCx5wNGQbc7i73wSx2m+H711zeHCckLsBOktE= tward@vbrepo
+    - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAn1OQ7x5nTHGyw3ke4tmNWhpLV1RaW/y4l5rl0CI4u0E0byUpetQGPgY4mfNv7+rmKQwc335e5CEgaRino9EQSegIJpu7UxEH6bwNDZYn6HunChG4Os0tB0vuxV6kFh5D6asbbxOEaMClv8etR5ALDvK+S98NDrn906gVT0KMvZO09Kfl6vwsutuXkbQTXS3lpbKwa5bVGkLujqgvZ061hPit276gbYhX4xNGt2UjM0hZpeg04mMpdzm0e/ba/16ZAqe4vqiXgiHZVp3OFsCafbo+Lb2dw4RrzriWr4ckH8ki96Pa00DzdwYWEm5nYww7PBMKbqKRbfxngV4GnvBS9w== root@vm248.mojohost.com
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCy2A+SR5zGT7zjw/8H22YGUJM5b3tbanrKkp3hdGlco2og42SOuvP4Qqg0tAxaGJt2CrGmmGfvIWXt7y23cxlnn08rgx0HSzAF944NX+BABbZWIVd5qEk5M3ioSyts7k0t6JybukyH7kBcCL8Q5h+QWbl/0dUXMyKbmS/iE5+k1rRYXdPlS0eyIeHs4GMFw7FWTpzjUCYGgHrH/cJVVQLCotQOjvIMm2RO8JoxOpvbY0sqz0bB6w8wpSfpfkSJFqnvXIge52vrzpLWdq88t5iuQyxBbZiXbTnUyhBzB7hqisXR7tt5GOcLc/np1ilhsnfgvxLKk/VDILWzLlPf+FY1 root@edcim
+    - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAxAMtdEe7E0WbOpbX14hRUALdfBEUA/mQLqqIak+mcOxDQKZ40sAGGuCZLJRw+V5Q8ItFktZHBh7onTm8GvpmpAfTKlr0IdNsrdRGGKRICpNkIgwiJnA22OwSr+jES2cCTgwbw/xazq+hm+gUuRWYVQb3nF9ELK8xJr2s2zmjoeb8OsFtlJTcUapxIcUTzPI5XgqUyLDcJ9X27gp8SFRA40pKirzlCBLUHKdBrBCls2GiuzIragwgJYoMQw+rwnpPjBcdtWxLT/x0OPiVEG3KDqvR9REvoC4lou30Dp7NeawE/QM7srDuKRRO3B4EBoHqPQMI7bNkrkJgKbSuMiwUuw== thomas@mojohost.com 
+    install-server: true
+  storage:
+    config:
+    - {ptable: gpt, path: /dev/sda, wipe: superblock-recursive,
+      preserve: false, name: '', grub_device: true, type: disk, id: disk-sda}
+    - {ptable: gpt, path: /dev/sdb, wipe: superblock-recursive,
+      preserve: false, name: '', grub_device: true, type: disk, id: disk-sdb}
+    - {device: disk-sdb, size: 1048576, flag: bios_grub, number: 1, preserve: false,
+      grub_device: false, type: partition, id: partition-1, wipe: superblock-recursive}
+    - {device: disk-sda, size: 1048576, flag: bios_grub, number: 1, preserve: false,
+      grub_device: false, type: partition, id: partition-2, wipe: superblock-recursive}
+    - {device: disk-sdb, size: 8G, wipe: superblock-recursive, flag: '', number: 2,
+      preserve: false, grub_device: false, type: partition, id: partition-3}
+    - {device: disk-sda, size: 8G, wipe: superblock-recursive, flag: '', number: 2,
+      preserve: false, grub_device: false, type: partition, id: partition-4}
+    - {device: disk-sdb, size: -1, wipe: superblock-recursive, flag: '', number: 3,
+      preserve: false, grub_device: false, type: partition, id: partition-5}
+    - {device: disk-sda, size: -1, wipe: superblock-recursive, flag: '', number: 3,
+      preserve: false, grub_device: false, type: partition, id: partition-6}
+    - name: md2
+      raidlevel: raid1
+      devices: [partition-5, partition-6]
+      spare_devices: []
+      preserve: false
+      type: raid
+      id: slash-raid
+    - name: md1
+      raidlevel: raid1
+      devices: [partition-3, partition-4]
+      spare_devices: []
+      preserve: false
+      type: raid
+      id: swap-raid
+    - {fstype: ext4, volume: slash-raid, preserve: false, type: format, id: slash-fs}
+    - {device: slash-fs, path: /, type: mount, id: mount-1}
+    - {fstype: swap, volume: swap-raid, preserve: false, type: format, id: swap-fs}
+    - {device: swap-fs, path: none, type: mount, id: mount-2}
+    swap: {size: 0}
+  version: 1
+  late-commands:
+    - curl -O "http://185.94.239.204:8080/os/kickstart/complete?mac=0c:c4:7a:53:56:ea"
+#    - sed -ie 's#http://185.94.239.204:8080/os/downloader/45/0c:c4:7a:53:56:ea/#http://us.archive.ubuntu.com/ubuntu/#' /etc/apt/sources.list
+    - sed -ie 's#http://185.94.239.204:8080/os/downloader/45/0c:c4:7a:53:56:ea/#http://us.archive.ubuntu.com/ubuntu#' /target/etc/apt/sources.list
+    - sed -ie 's/quiet splash//g' /target/etc/default/grub
+    - sed -ie 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /target/etc/ssh/sshd_config
+    - echo -e 'DNS=8.8.8.8\nDNS=1.1.1.1' >> /target/etc/systemd/resolved.conf

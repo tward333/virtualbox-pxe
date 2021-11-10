@@ -1,0 +1,128 @@
+skipx
+text
+install
+reboot
+
+lang en_US
+keyboard us
+timezone America/New_York
+
+auth  --useshadow  --enablemd5
+rootpw --iscrypted "$1$bEcHwOZD$vd80wOgtYva2tQfuPegP0/"
+user --name "rescue" --iscrypted --password "$1$sOiTvX5g$pLBndFN./7wiyGkUqLM7u."
+selinux --disabled
+url --url http://185.94.239.204:8080/os/downloader/2/0c:c4:7a:53:56:ea
+
+#DISK PARTITIONING
+bootloader --location=mbr
+zerombr
+clearpart --all --initlabel
+#Clear the Master Boot Record
+zerombr
+#Partition clearing information
+clearpart --all --initlabel
+#Disk partitioning information
+#SATA
+#Uncomment next three lines for single drive installation
+part biosboot.1 --fstype=biosboot --size=1 --ondisk=sda
+part biosboot.2 --fstype=biosboot --size=1 --ondisk=sdb
+part raid.8 --size=1024 --ondisk=sda --asprimary
+part raid.7 --size=1024 --ondisk=sdb --asprimary
+part raid.11 --size=8192 --ondisk=sdb
+part raid.9 --size=8192 --ondisk=sda
+part raid.12 --size=50000 --ondisk=sdb --asprimary --grow
+part raid.10 --size=50000 --ondisk=sda --asprimary --grow
+#part raid.12 --size=50000 --ondisk=sdb --asprimary 
+#part raid.10 --size=50000 --ondisk=sda --asprimary 
+raid /boot --fstype="ext4" --level=RAID1 --device=md0 raid.8 raid.7
+raid / --fstype="ext4" --level=RAID1 --device=md1 raid.10 raid.12
+raid swap --fstype swap --level=RAID0 --device=md2 raid.9 raid.11
+
+#NETWORK
+%include /tmp/eth-configuration
+firewall --disabled
+
+%packages --ignoremissing
+openssh-server
+wget
+@base
+@core
+tftp
+screen
+ipmitool
+OpenIPMI
+net-tools
+ipmitool
+psmisc
+nano
+%end
+
+%pre
+
+MAC="0c:c4:7a:53:56:ea"
+ETH="eth0"
+shopt -s nocasematch
+
+cd /sys/class/net
+for device in *
+do
+	if [ `cat $device/address` == $MAC ] ; then
+		ETH=$device
+	fi
+done
+
+echo "network --device=$ETH --bootproto=static --ip=192.168.96.91 --netmask=255.255.255.0 --gateway=192.168.96.1 --nameserver=8.8.8.8,1.1.1.1 --hostname=jf27-r03-3.home.local" > /tmp/eth-configuration
+#nics=();
+#cd /sys/class/net
+#for device in *;do
+# if [[ -f "${device}/operstate" ]]; then
+#    if [[ `cat ${device}/operstate` == 'up' ]]; then
+#      nics+=( $device );
+#   fi 
+# fi
+#done
+#      delim="";
+#      joined="";
+#for item in "${nics[@]}"; do
+#    joined="$joined$delim$item";
+#    delim=",";
+# done
+#echo "network --device=bond0 --noipv6 --bootproto=static --ip=192.168.96.91 --netmask=255.255.255.0 --gateway=192.168.96.1 --onboot=yes --bondslaves=$joined --hostname=jf27-r03-3.home.local --bondopts=mode=4,miimon=100,xmit_hash_policy=layer3+4" > /tmp/eth-configuration;
+#echo "network  --bootproto=static --device=team0 --gateway=192.168.96.1 --ip=192.168.96.91 --nameserver=8.8.8.8,1.1.1.1 --netmask=255.255.255.0 --noipv6 --hostname=jf27-r03-3.home.local --activate --teamslaves=$joined --teamconfig='{ \"device\": \"team0\",\"hwaddr\": \"$MAC\", \"runner\":{\"name\":\"lacp\"}}'" > /tmp/eth-configuration;
+
+
+%end
+
+%post
+
+#POST INSTALLATION
+curl -O "http://185.94.239.204:8080/os/kickstart/provision-status?mac=0c:c4:7a:53:56:ea&message=Post-installation+scripts"
+
+
+
+mkdir  -p '/root/.ssh';
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAn1OQ7x5nTHGyw3ke4tmNWhpLV1RaW/y4l5rl0CI4u0E0byUpetQGPgY4mfNv7+rmKQwc335e5CEgaRino9EQSegIJpu7UxEH6bwNDZYn6HunChG4Os0tB0vuxV6kFh5D6asbbxOEaMClv8etR5ALDvK+S98NDrn906gVT0KMvZO09Kfl6vwsutuXkbQTXS3lpbKwa5bVGkLujqgvZ061hPit276gbYhX4xNGt2UjM0hZpeg04mMpdzm0e/ba/16ZAqe4vqiXgiHZVp3OFsCafbo+Lb2dw4RrzriWr4ckH8ki96Pa00DzdwYWEm5nYww7PBMKbqKRbfxngV4GnvBS9w== root@vm248.mojohost.com" >> /root/.ssh/authorized_keys;
+perl -pi -e 's/#Protocol 2,1/Protocol 2/s' /etc/ssh/sshd_config;
+perl -pi -e 's/#UseDNS yes/UseDNS no/s' /etc/ssh/sshd_config;
+
+curl -s http://192.168.96.1:8080/bond_nics.txt --output /root/bond_nics --max-time 30;
+chmod 755  /root/bond_nics;
+
+cat > /etc/init.d/firstrun <<EOF
+#!/bin/bash
+# chkconfig: 3 20 80
+# description: EasyDCIM First Boot Scripts
+
+chkconfig --del firstrun
+EOF
+wget -O /tmp/firstboot.commands "http://185.94.239.204:8080/os/kickstart/firstboot?mac=0c:c4:7a:53:56:ea"
+cat /tmp/firstboot.commands >> /etc/init.d/firstrun
+echo >> /etc/init.d/firstrun
+echo rm /etc/init.d/firstrun >> /etc/init.d/firstrun
+chmod +x /etc/init.d/firstrun
+chkconfig --add firstrun
+chkconfig named on
+
+curl -O "http://185.94.239.204:8080/os/kickstart/complete?mac=0c:c4:7a:53:56:ea"
+
+%end

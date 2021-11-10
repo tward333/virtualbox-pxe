@@ -1,0 +1,20 @@
+==template name
+Mojocustom-SystemRescueCd 8.03
+
+==cachefolder
+sysrcd803_mojo
+
+==notes
+external pipeline to add extra shit to this image, ask tward
+
+starts sshd by default, edcim host key added
+
+==original edcim template
+none, this one is fully custom
+
+==working install template
+#!gpxe
+initrd http://$pxeserver/os/downloader/$templateid/$mac/sysresccd/boot/x86_64/sysresccd.img
+kernel http://$pxeserver/os/downloader/$templateid/$mac/sysresccd/boot/x86_64/vmlinuz ip=dhcp nofirewall rootpass=$rootpassword  archisobasedir=sysresccd archiso_http_srv=http://$pxeserver/os/downloader/$templateid/$mac/ setkmap=us ar_source=http://$pxeserver/os/kickstart/sysrcd?mac=$mac&f= autoruns=no ar_nowait ar_nodel initrd=sysresccd.img
+sleep 1
+boot

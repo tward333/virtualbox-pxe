@@ -1,0 +1,72 @@
+
+#modified kickstart for #1443 jf27-r03-3, formerly "tmp.txt"
+lang en_US
+keyboard us
+timezone --utc America/New_York
+
+rootpw --iscrypted "$1$VSqCEYGe$8cO.C/qxvoiNAYFOY4xRm/"
+
+preseed passwd/username string rescue
+preseed passwd/user-fullname string rescue
+preseed passwd/user-password-crypted string "$1$wdjO01sn$7aGp3n2.0iKe3TPNuN1Se0"
+
+#preseed partman-lvm/device_remove_lvm boolean true
+#preseed partman-md/device_remove_md boolean true
+preseed user-setup/allow-password-weak boolean true
+#preseed partman-lvm/confirm_nooverwrite boolean true
+
+reboot
+text
+install
+url --url http://185.94.239.204:8080/os/downloader/45/0c:c4:7a:53:56:ea
+
+
+bootloader --location=mbr
+#zerombr yes
+#clearpart --all --initlabel
+
+auth  --useshadow  --enablemd5                                                                                                              [0/169]
+
+network --bootproto=static --ip=192.168.96.91 --netmask=255.255.255.0 --gateway=192.168.96.1 --nameserver=8.8.8.8,1.1.1.1 --hostname=jf27-r03-3.home.local
+
+preseed mirror/country string manual 
+firewall --disabled
+skipx
+
+%packages --resolvedeps
+openssh-server
+wget
+vim
+ifenslave
+ifupdown
+
+%pre
+lvremove -f vg || true
+pvremove -y -f /dev/sd* /dev/hd* || true
+rm -f /usr/lib/finish-install.d/55netcfg-copy-config
+%end
+
+%post --interpreter=/bin/bash --log=/root/ks-post.log
+
+wget -O - http://185.94.239.204:8080/os/kickstart/complete?mac=0c:c4:7a:53:56:ea
+
+rm -f /etc/netplan/01-netcfg.yaml
+echo 'network:' >> /etc/netplan/01-netcfg.yaml
+echo '  version: 2' >> /etc/netplan/01-netcfg.yaml
+echo '  renderer: networkd' >> /etc/netplan/01-netcfg.yaml
+echo '  ethernets:' >> /etc/netplan/01-netcfg.yaml
+echo '   id0:' >> /etc/netplan/01-netcfg.yaml
+echo '      match:' >> /etc/netplan/01-netcfg.yaml
+echo '        macaddress: 0c:c4:7a:53:56:ea' >> /etc/netplan/01-netcfg.yaml
+echo '      addresses: [192.168.96.91/24]' >> /etc/netplan/01-netcfg.yaml 
+echo '      gateway4: 192.168.96.1' >> /etc/netplan/01-netcfg.yaml
+echo '      nameservers:' >> /etc/netplan/01-netcfg.yaml
+echo '        addresses: [8.8.8.8,1.1.1.1]' >> /etc/netplan/01-netcfg.yaml
+
+#end stage refinement
+sed -i 's/quiet splash//g' /etc/default/grub
+update-grub
+touch /root/success.txt
+perl -pi -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/s' /etc/ssh/sshd_config;
+
+%end

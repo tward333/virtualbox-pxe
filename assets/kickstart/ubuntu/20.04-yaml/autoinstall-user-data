@@ -1,0 +1,68 @@
+#cloud-config
+autoinstall:
+  apt:
+    geoip: true
+    preserve_sources_list: false
+    primary:
+    - arches: [amd64, i386]
+      uri: http://192.168.56.20:8080/ubuntu
+    - arches: [default]
+      uri: http://ports.ubuntu.com/ubuntu-ports
+  identity: {hostname: pxe-efi, password: $6$JwxVjSUG3KwZ.ZVc$042rtpZ9QGys9lFEcAK7WBepLau4gcLeX6QMwXwi/eXKnxIAIjhe4veAQB8sVKU0L6yVbyaSP9UpgrXbD9TTG1,
+    realname: tom, username: tom}
+  keyboard: {layout: us, toggle: null, variant: ''}
+  locale: en_US
+  network:
+    ethernets:
+      enp0s3:
+        critical: true
+        dhcp-identifier: mac
+        dhcp4: true
+        nameservers:
+          addresses: [192.168.56.1]
+          search: [local.example.com.]
+    version: 2
+  ssh:
+    allow-pw: true
+    authorized-keys: []
+    install-server: true
+  storage:
+    config:
+    - {ptable: gpt, path: /dev/sda, wipe: superblock-recursive,
+      preserve: false, name: '', grub_device: false, type: disk, id: disk-sda}
+    - {ptable: gpt, path: /dev/sdb, wipe: superblock-recursive,
+      preserve: false, name: '', grub_device: false, type: disk, id: disk-sdb}
+    - {device: disk-sdb, size: 536870912, wipe: superblock, flag: boot, number: 1,
+      preserve: false, grub_device: true, type: partition, id: partition-0}
+    - {fstype: fat32, volume: partition-0, preserve: false, type: format, id: format-3}
+    - {device: disk-sda, size: 536870912, wipe: superblock, flag: boot, number: 1,
+      preserve: false, grub_device: true, type: partition, id: partition-1}
+    - {fstype: fat32, volume: partition-1, preserve: false, type: format, id: format-4}
+    - {device: disk-sdb, size: 8589934592, wipe: superblock, flag: '', number: 2,
+      preserve: false, grub_device: false, type: partition, id: partition-2}
+    - {device: disk-sda, size: 8589934592, wipe: superblock, flag: '', number: 2,
+      preserve: false, grub_device: false, type: partition, id: partition-3}
+    - name: md1
+      raidlevel: raid1
+      devices: [partition-2, partition-3]
+      spare_devices: []
+      preserve: false
+      type: raid
+      id: raid-0
+    - {fstype: swap, volume: raid-0, preserve: false, type: format, id: format-5}
+    - {device: format-5, path: '', type: mount, id: mount-4}
+    - {device: disk-sdb, size: -1, wipe: superblock, flag: '', number: 3,
+      preserve: false, grub_device: false, type: partition, id: partition-4}
+    - {device: disk-sda, size: -1, wipe: superblock, flag: '', number: 3,
+      preserve: false, grub_device: false, type: partition, id: partition-5}
+    - name: md2
+      raidlevel: raid1
+      devices: [partition-4, partition-5]
+      spare_devices: []
+      preserve: false
+      type: raid
+      id: raid-1
+    - {fstype: ext4, volume: raid-1, preserve: false, type: format, id: format-6}
+    - {device: format-6, path: /, type: mount, id: mount-5}
+    - {device: format-3, path: /boot/efi, type: mount, id: mount-3}
+  version: 1

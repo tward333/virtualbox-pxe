@@ -1,0 +1,115 @@
+==template name
+[Experimental] Ubuntu 18.04 LTS
+Ubuntu 18.04 LTS (preseed)
+[Bios] Ubuntu 18.04 LTS (preseed)
+
+==cachefolder
+ubuntu-bionic
+
+==notes
+kickseed simply cannot handle partition directives, and attempting to pass partman stuff in-line with kickstart  also failed. The only combintation that worked was a minimal kickstart, and all partition/raid stuff in a secondary preseed file. 
+
+edcim has some default kickstart vars that are not compatible with preseed partitioning:
+	zerombr yes
+	clearpart --all --initlabel
+
+edcim has an embedded debian preseed generator that they forgot about, so using it here for ubuntu works pretty great. Everything starting with version 4 uses this now 
+
+==original edcim template
+#!gpxe
+kernel http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux  ks=http://$pxeserver/os/kickstart/ubuntu?mac=$mac&networknetplan=1 netcfg/choose_interface=$mac netcfg/no_default_route=1 netcfg/link_wait_timeout=120 vga=normal
+initrd http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot
+
+==working install template, version 1
+#!gpxe
+kernel http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux ks=http://$pxeserver/tward/tmp.txt preseed/url=http://$pxeserver/tward/ubuntu-preseed-partman.txt netcfg/choose_interface=$mac netcfg/no_default_route=1 netcfg/link_wait_timeout=120 vga=normal
+initrd http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot
+
+==working install template, version 2 (updated filenames)
+#!gpxe
+kernel http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux ks=http://$pxeserver/tward/ubuntu/edcim-jf27-r03-3.txt preseed/url=http://$pxeserver/tward/ubuntu/edcim-preseed.txt netcfg/choose_interface=$mac netcfg/no_default_route=1 netcfg/link_wait_timeout=120 vga=normal
+initrd http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot
+
+==working install template, version 3. Uses generated kickstart + generated diskpart (if template selected) + static preseed
+#!gpxe
+kernel http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux  ks=http://$pxeserver/os/kickstart/ubuntu?mac=$mac&networknetplan=1  preseed/url=http://$pxeserver/tward/ubuntu/experimental-preseed.txt  netcfg/choose_interface=$mac netcfg/no_default_route=1 netcfg/link_wait_timeout=120 vga=normal
+initrd http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot
+
+==working install template, version 4. Uses generated preseed + generated diskpart include
+#!gpxe
+initrd http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+kernel http://$pxeserver/os/downloader/$templateid/$mac/dists/$edition/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux initrd=initrd.gz  auto=true priority=critical preseed/url=http://$pxeserver/os/kickstart/debian?mac=$mac  netcfg/choose_interface=$mac netcfg/no_default_route=1 netcfg/link_wait_timeout=120  vga=normal GRUB_DISABLE_OS_PROBER=true 
+sleep 5
+boot
+
+==version 4, post-install script field
+in-target sed -i 's/quiet splash//g' /etc/default/grub 
+in-target update-grub 
+in-target /usr/bin/perl -pi -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/s' /etc/ssh/sshd_config 
+in-target /bin/sh -c "/bin/echo 'DNS=8.8.8.8' >> /etc/systemd/resolved.conf" 
+in-target /bin/sh -c "/bin/echo 'DNS=1.1.1.1' >> /etc/systemd/resolved.conf" 
+in-target /bin/rm -f /etc/netplan/01-netcfg.yaml 
+in-target /bin/sh -c "/bin/echo 'network:' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/sh -c "/bin/echo '  version: 2' >> /etc/netplan/01-netcfg.yaml" 
+in-target /bin/sh -c "/bin/echo '  renderer: networkd' >> /etc/netplan/01-netcfg.yaml" 
+in-target /bin/sh -c "/bin/echo '  ethernets:' >> /etc/netplan/01-netcfg.yaml" 
+in-target /bin/sh -c "/bin/echo '   id0:' >> /etc/netplan/01-netcfg.yaml" 
+in-target /bin/sh -c "/bin/echo '      match:' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/sh -c "/bin/echo '        macaddress: {{mac}}' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/sh -c "/bin/echo '      addresses: [{{ip}}/24]' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/sh -c "/bin/echo '      gateway4: 192.168.96.1' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/sh -c "/bin/echo '      nameservers:' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/sh -c "/bin/echo '        addresses: [8.8.8.8,1.1.1.1]' >> /etc/netplan/01-netcfg.yaml"
+in-target /bin/mkdir /root/.ssh
+in-target /bin/sh -c "/bin/echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCy2A+SR5zGT7zjw/8H22YGUJM5b3tbanrKkp3hdGlco2og42SOuvP4Qqg0tAxaGJt2CrGmmGfvIWXt7y23cxlnn08rgx0HSzAF944NX+BABbZWIVd5qEk5M3ioSyts7k0t6JybukyH7kBcCL8Q5h+QWbl/0dUXMyKbmS/iE5+k1rRYXdPlS0eyIeHs4GMFw7FWTpzjUCYGgHrH/cJVVQLCotQOjvIMm2RO8JoxOpvbY0sqz0bB6w8wpSfpfkSJFqnvXIge52vrzpLWdq88t5iuQyxBbZiXbTnUyhBzB7hqisXR7tt5GOcLc/np1ilhsnfgvxLKk/VDILWzLlPf+FY1 root@edcim' >> /root/.ssh/authorized_keys"
+in-target /bin/sh -c "/bin/echo 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAn1OQ7x5nTHGyw3ke4tmNWhpLV1RaW/y4l5rl0CI4u0E0byUpetQGPgY4mfNv7+rmKQwc335e5CEgaRino9EQSegIJpu7UxEH6bwNDZYn6HunChG4Os0tB0vuxV6kFh5D6asbbxOEaMClv8etR5ALDvK+S98NDrn906gVT0KMvZO09Kfl6vwsutuXkbQTXS3lpbKwa5bVGkLujqgvZ061hPit276gbYhX4xNGt2UjM0hZpeg04mMpdzm0e/ba/16ZAqe4vqiXgiHZVp3OFsCafbo+Lb2dw4RrzriWr4ckH8ki96Pa00DzdwYWEm5nYww7PBMKbqKRbfxngV4GnvBS9w== root@vm248.mojohost.com' >> /root/.ssh/authorized_keys"
+
+==version 4 working diskpart template
+
+##start disk enforcements -- gpt, destroy raid, destroy partitions, etc
+d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt
+d-i partman-basicfilesystems/no_swap boolean false
+d-i partman/confirm_write_new_label boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman/choose_partition select finish
+d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite boolean true
+d-i mdadm/boot_degraded boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman/confirm boolean true
+d-i partman-md/confirm_nochanges boolean true
+##end disk enforcements
+
+##disk layout start
+d-i partman-auto/method string raid
+d-i partman-auto/disk string /dev/sda /dev/sdb
+
+d-i partman-auto/expert_recipe string \
+    myraid :: \
+                1 1 1 free method{ biosgrub } .   \
+                8192 100 8192 raid                \
+                        $primary{ }               \
+                        method{ raid }            \
+                .                                 \
+                8192 100 9999999999 raid          \
+                        $primary{ }               \
+                        method{ raid }            \
+                .
+
+d-i partman-auto-raid/recipe string  \
+  1 2 0 swap -  /dev/sda2#/dev/sdb2 . \
+  1 2 0 ext4 / /dev/sda3#/dev/sdb3 .
+
+d-i grub-installer/bootdev string (hd0)
+##disk layout end
+

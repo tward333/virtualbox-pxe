@@ -1,0 +1,74 @@
+skipx
+text
+install
+reboot
+
+lang en_US
+keyboard us
+timezone America/New_York
+
+auth  --useshadow  --enablemd5
+#passwd dicks
+rootpw --iscrypted "$1$EfiDElWh$iTtKnuiu0Cv9m3ZjmoUvP1"
+user --name "rescue" --iscrypted --password "$1$sOiTvX5g$pLBndFN./7wiyGkUqLM7u."
+selinux --disabled
+#url --url http://192.168.56.20:8080/centos
+url --url http://192.168.56.20:8080/centos/7/os/x86_64/
+
+
+
+##DISK PARTITIONING
+#bootloader --location=mbr
+clearpart --all --initlabel
+zerombr
+#
+###Disk partitioning information
+part biosboot.1 --fstype=biosboot --size=1 --ondrive=sda
+part biosboot.2 --fstype=biosboot --size=1 --ondrive=sdb
+part raid.11 --size 2048 --ondrive=sda --asprimary
+part raid.21 --size 2048 --ondrive=sdb --asprimary
+part raid.13 --size 16384 --ondrive=sda --asprimary --grow
+part raid.23 --size 16384 --ondrive=sdb --asprimary --grow
+part raid.12 --size 8192 --ondrive=sda
+part raid.22 --size 8192 --ondrive=sdb
+
+raid /boot --fstype ext2 --device md0 --level=RAID1 raid.11 raid.21
+raid swap --fstype swap --device md1  --level=RAID1 raid.12 raid.22
+raid / --fstype ext4 --device md2 --level=RAID1 raid.13 raid.23
+
+##this works
+#clearpart --all --initlabel
+#zerombr
+#part raid.13 --size 2000 --asprimary --ondrive=sda
+#part raid.15 --size 16384 --grow --ondrive=sda
+#part raid.23 --size 2000 --asprimary --ondrive=sdb
+#part raid.25 --size 16384 --grow --ondrive=sdb
+#raid / --fstype xfs --device root --level=RAID1 raid.15 raid.25
+#raid swap --fstype swap --device swap --level=RAID1 raid.13 raid.23
+
+
+#NETWORK
+firewall --disabled
+
+%packages --ignoremissing
+openssh-server
+wget
+@base
+@core
+tftp
+screen
+ipmitool
+OpenIPMI
+net-tools
+ipmitool
+psmisc
+nano
+%end
+
+
+%post
+perl -pi -e 's/#Protocol 2,1/Protocol 2/s' /etc/ssh/sshd_config;
+perl -pi -e 's/#UseDNS yes/UseDNS no/s' /etc/ssh/sshd_config;
+%end
+
+

@@ -1,0 +1,24 @@
+==template name
+[Experimental]ubuntu20.04-yaml-bios
+
+==cachefolder
+ubuntu-20.04.2-live-server-amd64
+
+==notes
+this one uses cloud-init, by pushing the entire livecd iso to the client and pulling down the init files. It handles raid okay but edcim has zero support for this style of config
+
+further refrence for the static files can be found in these key files:
+kickstart/ubuntu/20.04-yaml/meta-data
+kickstart/ubuntu/20.04-yaml/jf27-r03-3-bios.yml
+
+==original edcim template
+<none>
+==working install template, version 1. Uses static files as no dynamic generator exists
+#!gpxe
+initrd http://$pxeserver/os/downloader/$templateid/$mac/pxeisoboot/20.04.3/initrd
+kernel http://$pxeserver/os/downloader/$templateid/$mac/pxeisoboot/20.04.3/vmlinuz
+imgargs vmlinuz initrd=initrd root=/dev/ram0 ramdisk_size=1500000 ip=dhcp url=http://$pxeserver/os/downloader/$templateid/$mac/pxeisoboot/20.04.3/ubuntu-20.04.3-live-server-amd64.iso autoinstall ds=nocloud-net;s=http://$pxeserver/tward/ubuntu/20.04-yaml/
+sleep 5
+boot
+
+
