@@ -1,6 +1,3 @@
-assets/nfs
-assets/nfs/*
-assets/nfs/**
 repomirror
 config/log/**
 config/log/**/*
